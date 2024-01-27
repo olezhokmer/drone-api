@@ -7,4 +7,10 @@ export class ChromosomeDto {
   }
   angle: number;
   point: CoordinatesDto;
+  tan: number;
+}
+
+export class ExtendedChromosome {
+  start: ChromosomeDto;
+  finish: ChromosomeDto;
 }

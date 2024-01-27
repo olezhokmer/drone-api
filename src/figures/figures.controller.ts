@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { TaskDto } from '../algorithm/dto/task.dto';
 import { GeometryService } from 'src/geometry/geometry.service';
 import { GetFiguresDto } from './dto/getFigures.dto';
 
@@ -12,5 +13,10 @@ export class FiguresController {
       query.yMax,
       query.num,
     );
+  }
+
+  @Post()
+  postFigures(@Body() body: TaskDto) {
+    return this.geometryService.validateTaskAndGenerateObjects(body);
   }
 }

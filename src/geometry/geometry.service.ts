@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ChromosomeDto } from 'src/algorithm/dto/chromosome.dto';
 import { TaskDto } from 'src/algorithm/dto/task.dto';
 import { CoordinatesDto } from './dto/coordinates.dto';
@@ -73,6 +73,52 @@ export class GeometryService {
     }
 
     return quadrilaterals;
+  }
+
+  validateTaskAndGenerateObjects(task: TaskDto): ObjectDto[] {
+    const { objects, xMax, yMax } = task;
+
+    const parsedObjects = objects.map((object, index) => {
+      const id = (index + 1).toString();
+      const isOutsideZone = object.coordinates.some(
+        ({ x, y }) => x > xMax || x < 0 || y > yMax || y < 0,
+      );
+
+      if (isOutsideZone) {
+        throw new BadRequestException(
+          'Object ' + id + ' is outside the provided area.',
+        );
+      }
+
+      const permutations = this.permutate(object);
+
+      const convex = permutations.find((permutation: ObjectDto) => {
+        return this.isConvexQuadrilateral(permutation);
+      });
+
+      if (!convex) {
+        throw new BadRequestException('Object ' + id + ' is not convex.');
+      }
+
+      const other = objects.map((o, i) => (i != index ? o : null));
+
+      const intersectionIndex = other.findIndex((figure) =>
+        figure ? this.doesIntersectQuadrilateral(convex, figure) : false,
+      );
+
+      if (intersectionIndex != -1) {
+        throw new BadRequestException(
+          'Object ' +
+            id +
+            ' intersects object ' +
+            (intersectionIndex + 1).toString(),
+        );
+      }
+
+      return convex;
+    });
+
+    return parsedObjects;
   }
 
   generateRandomObject(
@@ -316,10 +362,10 @@ export class GeometryService {
     return new LineDto(chromosome.point, final);
   }
 
-  countIntersections(line: LineDto, objects: ObjectDto[]): number {
-    let count = 0;
+  countIntersections(line: LineDto, objects: ObjectDto[]): number[] {
+    const intersected = [];
 
-    objects.forEach((object) => {
+    objects.forEach((object, i) => {
       const coords = object.coordinates;
       const lines = coords.map((currentPoint, i) => {
         const finishPoint = coords.at((i + 1) % this.objectPointsNumber);
@@ -331,9 +377,9 @@ export class GeometryService {
         this.doLinesIntersect(line, objectLine),
       );
 
-      if (doesIntersect) count++;
+      if (doesIntersect) intersected.push(i);
     });
 
-    return count;
+    return intersected;
   }
 }

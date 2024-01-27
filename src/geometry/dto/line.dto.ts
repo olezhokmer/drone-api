@@ -1,3 +1,4 @@
+import { ChromosomeDto } from '../../algorithm/dto/chromosome.dto';
 import { CoordinatesDto } from './coordinates.dto';
 
 export class LineDto {
@@ -7,4 +8,6 @@ export class LineDto {
   }
   start: CoordinatesDto;
   end: CoordinatesDto;
+  intersected: number[];
+  chromosome: ChromosomeDto;
 }
